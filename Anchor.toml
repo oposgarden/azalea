@@ -1,0 +1,18 @@
+[programs.localnet]
+time_locked_fund = "ChwWD7uj781ybLCd2fNQXqgewPBWdNzNLm3VtpnjUPqt"
+
+[programs.devnet]
+time_locked_fund = "ChwWD7uj781ybLCd2fNQXqgewPBWdNzNLm3VtpnjUPqt"
+
+[programs.mainnet]
+time_locked_fund = "ChwWD7uj781ybLCd2fNQXqgewPBWdNzNLm3VtpnjUPqt"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
