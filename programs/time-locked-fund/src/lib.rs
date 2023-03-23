@@ -141,8 +141,7 @@ pub struct Redeem<'info> {
     )]
     pub token_vault: Box<Account<'info, TokenAccount>>,
 
-    /// CHECK: This is not dangerous because the vault authority needs to be the authority of the token vault
-    /// Perhaps we could add a check to guarantee that here but it would fail on execution.
+    /// CHECK: This is not dangerous because the vault authority needs to be the authority of the token vault. Perhaps we could add a check to guarantee that here but it would fail on execution.
     pub token_vault_authority: AccountInfo<'info>,
 
     #[account(
