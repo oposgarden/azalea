@@ -20,11 +20,22 @@ describe('Time locked fund', () => {
   const program = anchor.workspace.TimeLockedFund as Program<TimeLockedFund>
 
   it('creates and redeems fund successfully', async () => {
+    const latestBlockHash = await provider.connection.getLatestBlockhash()
+
     // *** Dummy token creation ***
     // Prepare token
     const mintPayerAndAuthority = anchor.web3.Keypair.generate()
+
+    const airdropRequest = await provider.connection.requestAirdrop(
+      mintPayerAndAuthority.publicKey,
+      10000000000,
+    )
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(mintPayerAndAuthority.publicKey, 10000000000),
+      {
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature: airdropRequest,
+      },
       'confirmed',
     )
 
@@ -39,7 +50,7 @@ describe('Time locked fund', () => {
     // ***************************
 
     // *** Account preparation ***
-    const [fund, _fund_bump] = await anchor.web3.PublicKey.findProgramAddress(
+    const [fund, _fund_bump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(anchor.utils.bytes.utf8.encode('fund')),
         Buffer.from(provider.wallet.publicKey.toBytes()),
@@ -49,19 +60,28 @@ describe('Time locked fund', () => {
     )
 
     const redeemer = anchor.web3.Keypair.generate()
+    const redeemerAirdrop = await provider.connection.requestAirdrop(
+      redeemer.publicKey,
+      10000000000,
+    )
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(redeemer.publicKey, 10000000000),
+      {
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature: redeemerAirdrop,
+      },
       'confirmed',
     )
+
     const redeemerTokenAccount = await getAssociatedTokenAddress(dummyTokenMint, redeemer.publicKey)
 
-    const [token_vault_pda, _token_vault_bump] = await anchor.web3.PublicKey.findProgramAddress(
+    const [token_vault_pda, _token_vault_bump] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from(fund.toBytes())],
       program.programId,
     )
 
     const [token_vault_authority_pda, _token_vault_authority_bump] =
-      await anchor.web3.PublicKey.findProgramAddress(
+      anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from(anchor.utils.bytes.utf8.encode('token-vault-authority'))],
         program.programId,
       )
@@ -147,11 +167,22 @@ describe('Time locked fund', () => {
   })
 
   it('fails to redeem if fund redeem date is in the future', async () => {
+    const blockhash = await provider.connection.getLatestBlockhash()
+
     // *** Dummy token creation ***
     // Prepare token
     const mintPayerAndAuthority = anchor.web3.Keypair.generate()
+
+    const authorityAirdrop = await provider.connection.requestAirdrop(
+      mintPayerAndAuthority.publicKey,
+      10000000000,
+    )
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(mintPayerAndAuthority.publicKey, 10000000000),
+      {
+        blockhash: blockhash.blockhash,
+        lastValidBlockHeight: blockhash.lastValidBlockHeight,
+        signature: authorityAirdrop,
+      },
       'confirmed',
     )
 
@@ -166,7 +197,7 @@ describe('Time locked fund', () => {
     // ***************************
 
     // *** Account preparation ***
-    const [fund, _fund_bump] = await anchor.web3.PublicKey.findProgramAddress(
+    const [fund, _fund_bump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(anchor.utils.bytes.utf8.encode('fund')),
         Buffer.from(provider.wallet.publicKey.toBytes()),
@@ -176,19 +207,26 @@ describe('Time locked fund', () => {
     )
 
     const redeemer = anchor.web3.Keypair.generate()
+    const airdropRequest = await provider.connection.requestAirdrop(redeemer.publicKey, 10000000000)
+    const latestBlockHash = await provider.connection.getLatestBlockhash()
+
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(redeemer.publicKey, 10000000000),
+      {
+        blockhash: latestBlockHash.blockhash,
+        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+        signature: airdropRequest,
+      },
       'confirmed',
     )
     const redeemerTokenAccount = await getAssociatedTokenAddress(dummyTokenMint, redeemer.publicKey)
 
-    const [token_vault_pda, _token_vault_bump] = await anchor.web3.PublicKey.findProgramAddress(
+    const [token_vault_pda, _token_vault_bump] = anchor.web3.PublicKey.findProgramAddressSync(
       [Buffer.from(fund.toBytes())],
       program.programId,
     )
 
     const [token_vault_authority_pda, _token_vault_authority_bump] =
-      await anchor.web3.PublicKey.findProgramAddress(
+      anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from(anchor.utils.bytes.utf8.encode('token-vault-authority'))],
         program.programId,
       )
@@ -248,8 +286,9 @@ describe('Time locked fund', () => {
     assert.equal(vaultBalance.value.uiAmount, new BN(100))
 
     try {
-      await program.rpc.redeem({
-        accounts: {
+      await program.methods
+        .redeem()
+        .accounts({
           mint: dummyTokenMint,
           fund: fund,
           tokenVault: token_vault_pda,
@@ -260,9 +299,9 @@ describe('Time locked fund', () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        },
-        signers: [redeemer],
-      })
+        })
+        .signers([redeemer])
+        .rpc()
     } catch (error) {
       assert.match(error.message, /Redeem time has not been reached/)
     }

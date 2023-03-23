@@ -132,7 +132,7 @@ const Home: NextPage = () => {
       let redeemedFunds = []
 
       while (true) {
-        const [fund, _fund_bump] = await web3.PublicKey.findProgramAddress(
+        const [fund, _fund_bump] = web3.PublicKey.findProgramAddressSync(
           [
             Buffer.from(anchor.utils.bytes.utf8.encode('fund')),
             Buffer.from(provider.wallet.publicKey.toBytes()),
@@ -211,7 +211,7 @@ const Home: NextPage = () => {
 
       const payerTokenAccount = await getAssociatedTokenAddress(token, provider.wallet.publicKey)
 
-      const [fund, _fund_bump] = await web3.PublicKey.findProgramAddress(
+      const [fund, _fund_bump] = web3.PublicKey.findProgramAddressSync(
         [
           Buffer.from(anchor.utils.bytes.utf8.encode('fund')),
           Buffer.from(provider.wallet.publicKey.toBytes()),
@@ -220,13 +220,13 @@ const Home: NextPage = () => {
         program.programId,
       )
 
-      const [token_vault_pda, _token_vault_bump] = await anchor.web3.PublicKey.findProgramAddress(
+      const [token_vault_pda, _token_vault_bump] = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from(fund.toBytes())],
         program.programId,
       )
 
       const [token_vault_authority_pda, _token_vault_authority_bump] =
-        await anchor.web3.PublicKey.findProgramAddress(
+        anchor.web3.PublicKey.findProgramAddressSync(
           [Buffer.from(anchor.utils.bytes.utf8.encode('token-vault-authority'))],
           program.programId,
         )
@@ -275,19 +275,20 @@ const Home: NextPage = () => {
         provider.wallet.publicKey,
       )
 
-      const [token_vault_pda, _token_vault_bump] = await anchor.web3.PublicKey.findProgramAddress(
+      const [token_vault_pda, _token_vault_bump] = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from(fund.toBytes())],
         program.programId,
       )
 
       const [token_vault_authority_pda, _token_vault_authority_bump] =
-        await anchor.web3.PublicKey.findProgramAddress(
+        anchor.web3.PublicKey.findProgramAddressSync(
           [Buffer.from(anchor.utils.bytes.utf8.encode('token-vault-authority'))],
           program.programId,
         )
 
-      await program.rpc.redeem({
-        accounts: {
+      await program.methods
+        .redeem()
+        .accounts({
           mint: fundAccount.mint,
           fund: fund,
           tokenVault: token_vault_pda,
@@ -298,8 +299,8 @@ const Home: NextPage = () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        },
-      })
+        })
+        .rpc()
     }
   }
 
@@ -449,14 +450,7 @@ const Home: NextPage = () => {
                 setRedeemFundModalOpen(false)
               }}
             >
-              {({
-                values,
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                isSubmitting,
-                setFieldValue,
-              }) => (
+              {({ values, handleChange, handleBlur, handleSubmit, isSubmitting }) => (
                 <>
                   <form onSubmit={handleSubmit} style={{ textAlign: 'center' }}>
                     <Modal.Content>

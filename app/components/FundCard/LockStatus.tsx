@@ -1,4 +1,4 @@
-import { Copy, Lock, Unlock, Check } from '@geist-ui/icons'
+import { Lock, Unlock, Check } from '@geist-ui/icons'
 
 interface LockStatusProps {
   fund: Fund

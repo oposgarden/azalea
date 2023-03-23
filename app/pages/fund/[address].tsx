@@ -95,13 +95,13 @@ const Fund: NextPage = () => {
         provider.wallet.publicKey,
       )
 
-      const [token_vault_pda, _token_vault_bump] = await anchor.web3.PublicKey.findProgramAddress(
+      const [token_vault_pda, _token_vault_bump] = anchor.web3.PublicKey.findProgramAddressSync(
         [Buffer.from(fund.toBytes())],
         program.programId,
       )
 
       const [token_vault_authority_pda, _token_vault_authority_bump] =
-        await anchor.web3.PublicKey.findProgramAddress(
+        anchor.web3.PublicKey.findProgramAddressSync(
           [Buffer.from(anchor.utils.bytes.utf8.encode('token-vault-authority'))],
           program.programId,
         )
