@@ -231,31 +231,30 @@ const Home: NextPage = () => {
 
       const mint = await getMint(connection, token)
 
-      await program.rpc.createFund(
-        indexString,
-        // Amount to deposit to the fund
-        amount.mul(new BN(10).pow(new BN(mint.decimals))),
+      await program.methods
+        .createFund(
+          indexString,
+          // Amount to deposit to the fund
+          amount.mul(new BN(10).pow(new BN(mint.decimals))),
 
-        // *** Timestamp options: ***
-        // One minute ago
-        new BN(redeemTimestamp),
+          // *** Timestamp options: ***
+          // One minute ago
+          new BN(redeemTimestamp),
+        )
+        .accounts({
+          mint: token,
+          fund: fund,
+          tokenVault: token_vault_pda,
+          tokenVaultAuthority: token_vault_authority_pda,
+          payerTokenAccount: payerTokenAccount,
+          redeemer: redeemer,
+          payer: provider.wallet.publicKey,
 
-        {
-          accounts: {
-            mint: token, // new PublicKey('HMmntdis4Q9CvzPN2peV6wYkDj1WQNKWzZoXSgt2mryZ'),
-            fund: fund,
-            tokenVault: token_vault_pda,
-            tokenVaultAuthority: token_vault_authority_pda,
-            payerTokenAccount: payerTokenAccount,
-            redeemer: redeemer,
-            payer: provider.wallet.publicKey,
-
-            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-            systemProgram: anchor.web3.SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
-          },
-        },
-      )
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .rpc()
 
       await getVaults()
     }

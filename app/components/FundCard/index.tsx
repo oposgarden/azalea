@@ -2,10 +2,16 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import copy from 'copy-to-clipboard'
 import { Card, Text, Spacer, Description, useToasts } from '@geist-ui/core'
-import { Copy, Lock, Unlock, Check } from '@geist-ui/icons'
+import { Copy } from '@geist-ui/icons'
 import { TokenListProvider, TokenInfo, ENV } from '@solana/spl-token-registry'
+import LockStatus from './LockStatus'
+import Ellipsis from '../Ellipsis'
 
-const FundCard = ({ fund }: { fund: any }) => {
+interface FundCardProps {
+  fund: Fund
+}
+
+const FundCard = ({ fund }: FundCardProps) => {
   const { setToast } = useToasts()
 
   const [token, setToken] = useState<TokenInfo | null>(null)
@@ -32,57 +38,42 @@ const FundCard = ({ fund }: { fund: any }) => {
       key={fund.address.toString()}
       style={{ position: 'relative' }}
     >
-      <div style={{ position: 'absolute', right: '18px', top: '18px' }}>
-        {fund.currentAmount.uiAmount == 0 ? (
-          <Check color="green" />
-        ) : new Date(fund.redeemTimestamp * 1000) < new Date() ? (
-          <Unlock color="green" />
-        ) : (
-          <Lock color="orange" />
-        )}
-      </div>
       <Link href={`/fund/${fund.address.toString()}`} passHref>
         <a>
           <Text h4 my={0}>
-            {new Date(fund.redeemTimestamp * 1000) < new Date() ? 'Unlocked fund' : 'Locked fund'}
+            {fund.currentAmount.uiAmount == 0
+              ? 'Redeemed fund'
+              : new Date(fund.redeemTimestamp * 1000) < new Date()
+              ? 'Unlocked fund'
+              : 'Locked fund'}
           </Text>
         </a>
       </Link>
+      <LockStatus fund={fund} />
       <Spacer h={1} />
       <Description
         title="Amount"
         content={
-          <div
-            style={{
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              maxWidth: '140px',
-            }}
-          >
+          <Ellipsis>
             {fund.currentAmount.uiAmountString} {token?.symbol || fund.mint.toString()}
-          </div>
+          </Ellipsis>
         }
       />
       <Spacer h={1} />
       <Description
         title="Redeemer"
         content={
-          <div
+          <Ellipsis
             style={{
               cursor: 'pointer',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              maxWidth: '140px',
             }}
             onClick={() => {
-              copy(fund.address.toString())
+              copy(fund.redeemer.toString())
               setToast({ text: 'Redeemer address copied', delay: 2000 })
             }}
           >
             {fund.redeemer.toString()}
-          </div>
+          </Ellipsis>
         }
       />
       <Spacer h={1} />
@@ -94,10 +85,6 @@ const FundCard = ({ fund }: { fund: any }) => {
         <div
           style={{
             cursor: 'pointer',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            maxWidth: '260px',
           }}
           onClick={() => {
             copy(
