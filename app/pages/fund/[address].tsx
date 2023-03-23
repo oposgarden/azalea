@@ -4,16 +4,15 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import copy from 'copy-to-clipboard'
-import * as anchor from '@project-serum/anchor'
-import { Program, Provider } from '@project-serum/anchor'
+import * as anchor from '@coral-xyz/anchor'
 import { PublicKey } from '@solana/web3.js'
+import { getProvider, getProgram } from '../../utils/contract'
 import { TokenListProvider, TokenInfo, ENV } from '@solana/spl-token-registry'
 import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token'
-import idl from '../../time_locked_fund.json'
 import {
   Badge,
   Button,
@@ -31,7 +30,7 @@ import { Lock, Unlock, Check } from '@geist-ui/icons'
 const opts = {
   preflightCommitment: 'processed',
 }
-const programID = new PublicKey('ChwWD7uj781ybLCd2fNQXqgewPBWdNzNLm3VtpnjUPqt')
+const programID = new PublicKey('EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc')
 
 const Fund: NextPage = () => {
   const { connection } = useConnection()
@@ -46,21 +45,23 @@ const Fund: NextPage = () => {
   const [tokenMap, setTokenMap] = useState<Map<string, TokenInfo>>(new Map())
 
   const getVault = async () => {
-    // @ts-ignore
-    const provider = new Provider(connection, wallet, opts.preflightCommitment)
+    const provider = getProvider({ wallet, connection })
+    const program = getProgram({ wallet, connection })
 
-    // @ts-ignore
-    const program = new Program(idl, programID, provider)
+    if (provider) {
+      const account = await program.account.fund.fetch(address as string)
+      const finalVaultBalance = await provider.connection.getTokenAccountBalance(account.tokenVault)
 
-    const account = await program.account.fund.fetch(address as string)
-    account.address = address
+      const fundFromAccount = {
+        ...account,
+        address,
+        currentAmount: finalVaultBalance.value,
+      }
 
-    const finalVaultBalance = await provider.connection.getTokenAccountBalance(account.tokenVault)
-    account.currentAmount = finalVaultBalance.value
-
-    setFund(account)
-
-    return provider
+      setFund(fundFromAccount)
+    } else {
+      setFund(undefined)
+    }
   }
 
   useEffect(() => {
@@ -83,13 +84,10 @@ const Fund: NextPage = () => {
   }, [setTokenMap])
 
   const redeem = async ({ fund }: { fund: PublicKey }) => {
-    if (wallet) {
-      // @ts-ignore
-      const provider = new Provider(connection, wallet, opts)
+    const provider = getProvider({ wallet, connection })
+    const program = getProgram({ wallet, connection })
 
-      // @ts-ignore
-      const program = new Program(idl, programID, provider)
-
+    if (provider) {
       const fundAccount = await program.account.fund.fetch(fund)
 
       const redeemerTokenAccount = await getAssociatedTokenAddress(
@@ -108,20 +106,25 @@ const Fund: NextPage = () => {
           program.programId,
         )
 
-      await program.rpc.redeem({
-        accounts: {
-          mint: fundAccount.mint,
-          fund: fund,
-          tokenVault: token_vault_pda,
-          tokenVaultAuthority: token_vault_authority_pda,
-          redeemer: provider.wallet.publicKey,
-          redeemerTokenAccount: redeemerTokenAccount,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-        },
-      })
+      try {
+        await program.methods
+          .redeem()
+          .accounts({
+            mint: fundAccount.mint,
+            fund: fund,
+            tokenVault: token_vault_pda,
+            tokenVaultAuthority: token_vault_authority_pda,
+            redeemer: provider.wallet.publicKey,
+            redeemerTokenAccount: redeemerTokenAccount,
+            systemProgram: anchor.web3.SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          })
+          .rpc()
+      } catch (error) {
+        console.log(error)
+      }
 
       getVault()
     }

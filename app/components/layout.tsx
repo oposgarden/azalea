@@ -1,7 +1,12 @@
 import { ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 require('@solana/wallet-adapter-react-ui/styles.css')
+
+const WalletMultiButton = dynamic(
+  async () => (await import('@solana/wallet-adapter-react-ui')).WalletMultiButton,
+  { ssr: false },
+)
 
 type Props = {
   children: ReactNode

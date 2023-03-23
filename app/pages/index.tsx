@@ -3,10 +3,12 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { Formik } from 'formik'
-import * as anchor from '@project-serum/anchor'
-import { Program, Provider, BN, web3 } from '@project-serum/anchor'
+import * as anchor from '@coral-xyz/anchor'
+import { Program, AnchorProvider, BN, web3 } from '@coral-xyz/anchor'
 import { TokenListProvider, TokenInfo, ENV } from '@solana/spl-token-registry'
+import { TimeLockedFund } from '../../target/types/time_locked_fund'
 import { PublicKey } from '@solana/web3.js'
+import { getProvider, getProgram } from 'utils/contract'
 import {
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
@@ -33,7 +35,7 @@ import FundCard from '../components/FundCard'
 const opts = {
   preflightCommitment: 'processed',
 }
-const programID = new PublicKey('ChwWD7uj781ybLCd2fNQXqgewPBWdNzNLm3VtpnjUPqt')
+const programID = new PublicKey('EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc')
 
 const Home: NextPage = () => {
   const { connection } = useConnection()
@@ -76,83 +78,110 @@ const Home: NextPage = () => {
   }, [setTokenMap])
 
   const getMintAccounts = async () => {
-    // @ts-ignore
-    const provider = new Provider(connection, wallet, opts.preflightCommitment)
+    if (wallet.publicKey && wallet.signAllTransactions && wallet.signTransaction) {
+      const signerWallet = {
+        publicKey: wallet.publicKey,
+        signTransaction: wallet.signTransaction,
+        signAllTransactions: wallet.signAllTransactions,
+      }
 
-    const tokenAccounts = await connection.getTokenAccountsByOwner(provider.wallet.publicKey, {
-      programId: TOKEN_PROGRAM_ID,
-    })
+      const provider = new AnchorProvider(connection, signerWallet, {
+        preflightCommitment: 'processed',
+      })
 
-    const accountsData: any[] = []
-    tokenAccounts.value.forEach(async tokenAccount => {
-      const accountData = AccountLayout.decode(tokenAccount.account.data)
-      const token = tokenMap.get(accountData.mint.toString())
-      const extendedAccountData = { ...accountData, name: token?.name, symbol: token?.symbol }
-      accountsData.push(extendedAccountData)
-    })
+      const tokenAccounts = await connection.getTokenAccountsByOwner(provider.wallet.publicKey, {
+        programId: TOKEN_PROGRAM_ID,
+      })
 
-    setMintAccounts(accountsData)
+      const accountsData: any[] = []
+      tokenAccounts.value.forEach(async tokenAccount => {
+        const accountData = AccountLayout.decode(tokenAccount.account.data)
+        const token = tokenMap.get(accountData.mint.toString())
+        const extendedAccountData = { ...accountData, name: token?.name, symbol: token?.symbol }
+        accountsData.push(extendedAccountData)
+      })
+
+      setMintAccounts(accountsData)
+    } else {
+      setMintAccounts([])
+    }
+
+    return null
   }
 
   const getVaults = async () => {
     setLoading(true)
-    // @ts-ignore
-    const provider = new Provider(connection, wallet, opts.preflightCommitment)
 
-    // @ts-ignore
-    const program = new Program(idl, programID, provider)
+    if (wallet.publicKey && wallet.signAllTransactions && wallet.signTransaction) {
+      const signerWallet = {
+        publicKey: wallet.publicKey,
+        signTransaction: wallet.signTransaction,
+        signAllTransactions: wallet.signAllTransactions,
+      }
 
-    let index = 1
-    let funds = []
-    let openFunds = []
-    let lockedFunds = []
-    let redeemedFunds = []
-    while (true) {
-      const [fund, _fund_bump] = await web3.PublicKey.findProgramAddress(
-        [
-          Buffer.from(anchor.utils.bytes.utf8.encode('fund')),
-          Buffer.from(provider.wallet.publicKey.toBytes()),
-          Buffer.from(anchor.utils.bytes.utf8.encode(index.toString())),
-        ],
-        program.programId,
-      )
+      const provider = new AnchorProvider(connection, signerWallet, {
+        preflightCommitment: 'processed',
+      })
 
-      try {
-        const account = await program.account.fund.fetch(fund)
-        account.address = fund
+      const program = new Program(idl as any, programID, provider) as Program<TimeLockedFund>
 
-        const finalVaultBalance = await provider.connection.getTokenAccountBalance(
-          account.tokenVault,
+      let index = 1
+      let funds = []
+      let openFunds = []
+      let lockedFunds = []
+      let redeemedFunds = []
+
+      while (true) {
+        const [fund, _fund_bump] = await web3.PublicKey.findProgramAddress(
+          [
+            Buffer.from(anchor.utils.bytes.utf8.encode('fund')),
+            Buffer.from(provider.wallet.publicKey.toBytes()),
+            Buffer.from(anchor.utils.bytes.utf8.encode(index.toString())),
+          ],
+          program.programId,
         )
-        account.currentAmount = finalVaultBalance.value
 
-        if (account) {
-          funds.push(account)
+        try {
+          const account = await program.account.fund.fetch(fund)
 
-          if (account.currentAmount.uiAmount == 0) {
-            redeemedFunds.push(account)
-          } else if (new Date(account.redeemTimestamp * 1000) < new Date()) {
-            openFunds.push(account)
-          } else {
-            lockedFunds.push(account)
+          const finalVaultBalance = await provider.connection.getTokenAccountBalance(
+            account.tokenVault,
+          )
+
+          const fundFromAccount = {
+            ...account,
+            address: fund,
+            currentAmount: finalVaultBalance.value,
           }
-          index++
-        } else {
+
+          if (account) {
+            funds.push(fundFromAccount)
+
+            if (fundFromAccount.currentAmount.uiAmount == 0) {
+              redeemedFunds.push(fundFromAccount)
+            } else if (new Date(account.redeemTimestamp * 1000) < new Date()) {
+              openFunds.push(fundFromAccount)
+            } else {
+              lockedFunds.push(fundFromAccount)
+            }
+            index++
+          } else {
+            break
+          }
+        } catch (error) {
+          console.log(error)
           break
         }
-      } catch (error) {
-        console.log(error)
-        break
       }
+
+      setFunds(funds)
+      setOpenFunds(openFunds)
+      setLockedFunds(lockedFunds)
+      setRedeemedFunds(redeemedFunds)
     }
 
-    setFunds(funds)
-    setOpenFunds(openFunds)
-    setLockedFunds(lockedFunds)
-    setRedeemedFunds(redeemedFunds)
     setLoading(false)
-
-    return provider
+    return null
   }
 
   useEffect(() => {
@@ -171,15 +200,12 @@ const Home: NextPage = () => {
     redeemer: PublicKey
     redeemTimestamp: number
   }) => {
-    if (wallet) {
+    const provider = getProvider({ wallet, connection })
+    const program = getProgram({ wallet, connection })
+
+    if (provider) {
       const index = funds.length + 1
       const indexString = index.toString()
-
-      // @ts-ignore
-      const provider = new Provider(connection, wallet, opts)
-
-      // @ts-ignore
-      const program = new Program(idl, programID, provider)
 
       const payerTokenAccount = await getAssociatedTokenAddress(token, provider.wallet.publicKey)
 
@@ -236,13 +262,10 @@ const Home: NextPage = () => {
   }
 
   const redeem = async ({ fund }: { fund: PublicKey }) => {
-    if (wallet) {
-      // @ts-ignore
-      const provider = new Provider(connection, wallet, opts)
+    const provider = getProvider({ wallet, connection })
+    const program = getProgram({ wallet, connection })
 
-      // @ts-ignore
-      const program = new Program(idl, programID, provider)
-
+    if (provider) {
       const fundAccount = await program.account.fund.fetch(fund)
 
       const redeemerTokenAccount = await getAssociatedTokenAddress(

@@ -41,12 +41,7 @@ const FundCard = ({ fund }: { fund: any }) => {
           <Lock color="orange" />
         )}
       </div>
-      <Link
-        href={`${
-          process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-        }/fund/${fund.address.toString()}`}
-        passHref
-      >
+      <Link href={`/fund/${fund.address.toString()}`} passHref>
         <a>
           <Text h4 my={0}>
             {new Date(fund.redeemTimestamp * 1000) < new Date() ? 'Unlocked fund' : 'Locked fund'}
@@ -56,7 +51,18 @@ const FundCard = ({ fund }: { fund: any }) => {
       <Spacer h={1} />
       <Description
         title="Amount"
-        content={`${fund.currentAmount.uiAmountString} (${token?.symbol})`}
+        content={
+          <div
+            style={{
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              maxWidth: '140px',
+            }}
+          >
+            {fund.currentAmount.uiAmountString} {token?.symbol || fund.mint.toString()}
+          </div>
+        }
       />
       <Spacer h={1} />
       <Description
