@@ -1,4 +1,5 @@
 interface Fund {
+  name: string
   address: anchor.web3.PublicKey
   currentAmount: anchor.web3.TokenAmount
   amount: BN

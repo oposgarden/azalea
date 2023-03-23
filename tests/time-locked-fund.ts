@@ -91,6 +91,7 @@ describe('Time locked fund', () => {
     await program.methods
       .createFund(
         '1',
+        'Test vault',
         // Amount to deposit to the fund
         new BN(100).mul(new BN(1000000)),
 
@@ -214,31 +215,31 @@ describe('Time locked fund', () => {
     // ***************************
 
     // Create the fund vault
-    await program.rpc.createFund(
-      '2',
-      // Amount to deposit to the fund
-      new BN(100).mul(new BN(1000000)),
+    await program.methods
+      .createFund(
+        '2',
+        'Test vault',
+        // Amount to deposit to the fund
+        new BN(100).mul(new BN(1000000)),
 
-      // *** Timestamp options: ***
-      // In one day
-      new BN(new Date().getTime() / 1000 + 60 * 60 * 24),
+        // *** Timestamp options: ***
+        // In one day
+        new BN(new Date().getTime() / 1000 + 60 * 60 * 24),
+      )
+      .accounts({
+        fund: fund,
+        mint: dummyTokenMint,
+        tokenVault: token_vault_pda,
+        tokenVaultAuthority: token_vault_authority_pda,
+        payerTokenAccount: payerTokenAccount,
+        redeemer: redeemer.publicKey,
+        payer: provider.wallet.publicKey,
 
-      {
-        accounts: {
-          fund: fund,
-          mint: dummyTokenMint,
-          tokenVault: token_vault_pda,
-          tokenVaultAuthority: token_vault_authority_pda,
-          payerTokenAccount: payerTokenAccount,
-          redeemer: redeemer.publicKey,
-          payer: provider.wallet.publicKey,
-
-          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          systemProgram: anchor.web3.SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-      },
-    )
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        systemProgram: anchor.web3.SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .rpc()
 
     const payerTokenBalance = await provider.connection.getTokenAccountBalance(payerTokenAccount)
     assert.equal(payerTokenBalance.value.uiAmount, new BN(3900))

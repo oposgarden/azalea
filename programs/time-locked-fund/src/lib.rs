@@ -12,7 +12,7 @@ const TOKEN_VAULT_AUTHORITY_PDA_SEED: &[u8] = b"token-vault-authority";
 pub mod time_locked_fund {
     use super::*;
 
-    pub fn create_fund(ctx: Context<CreateFund>, _seed: String, amount: u64, redeem_timestamp: u64) -> Result<()> {
+    pub fn create_fund(ctx: Context<CreateFund>, _seed: String, name: String, amount: u64, redeem_timestamp: u64) -> Result<()> {
         {   
             transfer(
                 CpiContext::new(
@@ -28,6 +28,7 @@ pub mod time_locked_fund {
         }
 
         let fund = &mut ctx.accounts.fund;
+        fund.name = name;
         fund.mint = ctx.accounts.mint.key();
         fund.token_vault = ctx.accounts.token_vault.key();
         fund.redeemer = ctx.accounts.redeemer.key();
@@ -165,6 +166,8 @@ pub struct Redeem<'info> {
 #[derive(InitSpace)]
 #[derive(Default)]
 pub struct Fund {
+    #[max_len(50)]
+    pub name: String,
     pub amount: u64,
     pub redeem_timestamp: u64,
     pub mint: Pubkey,

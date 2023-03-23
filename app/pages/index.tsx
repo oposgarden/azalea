@@ -190,11 +190,13 @@ const Home: NextPage = () => {
   }, [tokenMap])
 
   const createVault = async ({
+    name,
     amount,
     token,
     redeemer,
     redeemTimestamp,
   }: {
+    name: string
     amount: BN
     token: PublicKey
     redeemer: PublicKey
@@ -234,6 +236,7 @@ const Home: NextPage = () => {
       await program.methods
         .createFund(
           indexString,
+          name,
           // Amount to deposit to the fund
           amount.mul(new BN(10).pow(new BN(mint.decimals))),
 
@@ -330,12 +333,13 @@ const Home: NextPage = () => {
             <Modal.Title>New Fund</Modal.Title>
 
             <Formik
-              initialValues={{ amount: '', token: '', redeemer: '', redeemTimestamp: '' }}
+              initialValues={{ name: '', amount: '', token: '', redeemer: '', redeemTimestamp: '' }}
               onSubmit={async (values, { setSubmitting }) => {
                 const timestamp = new Date(values.redeemTimestamp).getTime()
                 const timestampInSeconds = Math.floor(timestamp / 1000)
 
                 await createVault({
+                  name: values.name,
                   amount: new BN(values.amount),
                   token: new PublicKey(values.token),
                   redeemer: new PublicKey(values.redeemer),
@@ -356,6 +360,16 @@ const Home: NextPage = () => {
                 <>
                   <form onSubmit={handleSubmit} style={{ textAlign: 'center' }}>
                     <Modal.Content>
+                      <Input
+                        placeholder="Vault name"
+                        htmlType="text"
+                        name="name"
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        value={values.name}
+                        width="100%"
+                      />
+                      <Spacer h={0.5} />
                       <Select
                         placeholder="Choose token"
                         onChange={e => setFieldValue('token', e)}
@@ -432,6 +446,7 @@ const Home: NextPage = () => {
                   fund: new PublicKey(values.fund),
                 })
                 setSubmitting(false)
+                setRedeemFundModalOpen(false)
               }}
             >
               {({

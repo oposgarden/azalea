@@ -41,11 +41,7 @@ const FundCard = ({ fund }: FundCardProps) => {
       <Link href={`/fund/${fund.address.toString()}`} passHref>
         <a>
           <Text h4 my={0}>
-            {fund.currentAmount.uiAmount == 0
-              ? 'Redeemed fund'
-              : new Date(fund.redeemTimestamp * 1000) < new Date()
-              ? 'Unlocked fund'
-              : 'Locked fund'}
+            {fund.name || 'Fund'}
           </Text>
         </a>
       </Link>
