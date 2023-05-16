@@ -1,9 +1,8 @@
 import { Program, AnchorProvider } from '@coral-xyz/anchor'
 import { WalletContextState } from '@solana/wallet-adapter-react'
-import { PublicKey } from '@solana/web3.js'
-import { type Connection } from '@solana/web3.js'
+import { PublicKey, type Connection } from '@solana/web3.js'
 import idl from '../time_locked_fund.json'
-import { TimeLockedFund } from '../../target/types/time_locked_fund'
+import { TimeLockedFund } from '../types/time_locked_fund'
 
 const programID = new PublicKey('EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc')
 

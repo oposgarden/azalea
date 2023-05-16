@@ -5,7 +5,7 @@ import { Formik } from 'formik'
 import * as anchor from '@coral-xyz/anchor'
 import { Program, AnchorProvider, BN, web3 } from '@coral-xyz/anchor'
 import { TokenListProvider, TokenInfo, ENV } from '@solana/spl-token-registry'
-import { TimeLockedFund } from '../../target/types/time_locked_fund'
+import { TimeLockedFund } from '../types/time_locked_fund'
 import { PublicKey } from '@solana/web3.js'
 import { getProvider, getProgram } from 'utils/contract'
 import {
