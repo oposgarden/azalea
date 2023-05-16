@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type { NextPage } from 'next'
-import Head from 'next/head'
 import { useWallet, useConnection } from '@solana/wallet-adapter-react'
 import { Formik } from 'formik'
 import * as anchor from '@coral-xyz/anchor'

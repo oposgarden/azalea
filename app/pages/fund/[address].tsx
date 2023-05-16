@@ -235,7 +235,11 @@ const Fund: NextPage = () => {
                       }
                       width="100%"
                     >
-                      Redeem
+                      {fund.currentAmount.uiAmount == 0
+                        ? 'Already redeemed'
+                        : new Date(fund.redeemTimestamp * 1000) < new Date()
+                        ? 'Redeem'
+                        : 'Redeem not available yet'}
                     </Button>
                   )}
                 </Card.Footer>
