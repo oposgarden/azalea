@@ -12,42 +12,49 @@ import {
   getAssociatedTokenAddress,
 } from '@solana/spl-token'
 
+// Configure the client to use the local cluster.
+const provider = anchor.AnchorProvider.env()
+anchor.setProvider(provider)
+// Instantiate the program
+const program = anchor.workspace.TimeLockedFund as Program<TimeLockedFund>
+
+const airdrop = async (mintPayerAndAuthority, value) => {
+  const latestBlockHash = await provider.connection.getLatestBlockhash()
+
+  const authorityAirdrop = await provider.connection.requestAirdrop(
+    mintPayerAndAuthority.publicKey,
+    value,
+  )
+  await provider.connection.confirmTransaction(
+    {
+      blockhash: latestBlockHash.blockhash,
+      lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+      signature: authorityAirdrop,
+    },
+    'confirmed',
+  )
+}
+
+const createDummyToken = async mintPayerAndAuthority => {
+  return await createMint(
+    provider.connection,
+    mintPayerAndAuthority,
+    mintPayerAndAuthority.publicKey,
+    mintPayerAndAuthority.publicKey,
+    6,
+  )
+}
+
 describe('Time locked fund', () => {
-  // Configure the client to use the local cluster.
-  const provider = anchor.AnchorProvider.env()
-  anchor.setProvider(provider)
-
-  const program = anchor.workspace.TimeLockedFund as Program<TimeLockedFund>
-
   it('creates and redeems fund successfully', async () => {
-    const latestBlockHash = await provider.connection.getLatestBlockhash()
-
-    // *** Dummy token creation ***
-    // Prepare token
+    // Authority
     const mintPayerAndAuthority = anchor.web3.Keypair.generate()
 
-    const airdropRequest = await provider.connection.requestAirdrop(
-      mintPayerAndAuthority.publicKey,
-      10000000000,
-    )
-    await provider.connection.confirmTransaction(
-      {
-        blockhash: latestBlockHash.blockhash,
-        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        signature: airdropRequest,
-      },
-      'confirmed',
-    )
+    // Airdrop SOL
+    await airdrop(mintPayerAndAuthority, 10000000000)
 
-    // Create dummy token mint
-    const dummyTokenMint = await createMint(
-      provider.connection,
-      mintPayerAndAuthority,
-      mintPayerAndAuthority.publicKey,
-      mintPayerAndAuthority.publicKey,
-      6,
-    )
-    // ***************************
+    // Create dummy token
+    const dummyTokenMint = await createDummyToken(mintPayerAndAuthority)
 
     // *** Account preparation ***
     const [fund, _fund_bump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -60,18 +67,7 @@ describe('Time locked fund', () => {
     )
 
     const redeemer = anchor.web3.Keypair.generate()
-    const redeemerAirdrop = await provider.connection.requestAirdrop(
-      redeemer.publicKey,
-      10000000000,
-    )
-    await provider.connection.confirmTransaction(
-      {
-        blockhash: latestBlockHash.blockhash,
-        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        signature: redeemerAirdrop,
-      },
-      'confirmed',
-    )
+    await airdrop(redeemer, 10000000000)
 
     const redeemerTokenAccount = await getAssociatedTokenAddress(dummyTokenMint, redeemer.publicKey)
 
@@ -167,34 +163,14 @@ describe('Time locked fund', () => {
   })
 
   it('fails to redeem if fund redeem date is in the future', async () => {
-    const blockhash = await provider.connection.getLatestBlockhash()
-
-    // *** Dummy token creation ***
-    // Prepare token
+    // Authority
     const mintPayerAndAuthority = anchor.web3.Keypair.generate()
 
-    const authorityAirdrop = await provider.connection.requestAirdrop(
-      mintPayerAndAuthority.publicKey,
-      10000000000,
-    )
-    await provider.connection.confirmTransaction(
-      {
-        blockhash: blockhash.blockhash,
-        lastValidBlockHeight: blockhash.lastValidBlockHeight,
-        signature: authorityAirdrop,
-      },
-      'confirmed',
-    )
+    // Airdrop SOL to authority
+    await airdrop(mintPayerAndAuthority, 10000000000)
 
-    // Create dummy token mint
-    const dummyTokenMint = await createMint(
-      provider.connection,
-      mintPayerAndAuthority,
-      mintPayerAndAuthority.publicKey,
-      mintPayerAndAuthority.publicKey,
-      6,
-    )
-    // ***************************
+    // Create dummy token
+    const dummyTokenMint = await createDummyToken(mintPayerAndAuthority)
 
     // *** Account preparation ***
     const [fund, _fund_bump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -207,17 +183,9 @@ describe('Time locked fund', () => {
     )
 
     const redeemer = anchor.web3.Keypair.generate()
-    const airdropRequest = await provider.connection.requestAirdrop(redeemer.publicKey, 10000000000)
-    const latestBlockHash = await provider.connection.getLatestBlockhash()
+    // Airdrop SOL to redeemer
+    await airdrop(redeemer, 10000000000)
 
-    await provider.connection.confirmTransaction(
-      {
-        blockhash: latestBlockHash.blockhash,
-        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        signature: airdropRequest,
-      },
-      'confirmed',
-    )
     const redeemerTokenAccount = await getAssociatedTokenAddress(dummyTokenMint, redeemer.publicKey)
 
     const [token_vault_pda, _token_vault_bump] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -279,12 +247,14 @@ describe('Time locked fund', () => {
       })
       .rpc()
 
+    // Assert balance values after creating the fund
     const payerTokenBalance = await provider.connection.getTokenAccountBalance(payerTokenAccount)
     assert.equal(payerTokenBalance.value.uiAmount, new BN(3900))
 
     const vaultBalance = await provider.connection.getTokenAccountBalance(token_vault_pda)
     assert.equal(vaultBalance.value.uiAmount, new BN(100))
 
+    // Assert that the redemption fails
     try {
       await program.methods
         .redeem()
