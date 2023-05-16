@@ -170,9 +170,7 @@ const Fund: NextPage = () => {
                 )}
               </div>
               <Text h4 my={0}>
-                {new Date(fund.redeemTimestamp * 1000) < new Date()
-                  ? 'Unlocked fund'
-                  : 'Locked fund'}
+                {fund.name || 'Fund'}
               </Text>
               <Spacer h={1} />
               <Description
