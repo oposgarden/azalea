@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount, Transfer, transfer};
-use anchor_spl::associated_token::{AssociatedToken};
-use anchor_lang::solana_program::{clock};
+use anchor_spl::associated_token::AssociatedToken;
+use anchor_lang::solana_program::clock;
 
 declare_id!("EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc");
 
