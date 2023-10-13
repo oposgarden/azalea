@@ -1,8 +1,8 @@
 {
   "license": "MIT",
   "dependencies": {
-    "@coral-xyz/anchor": "^0.27.0",
-    "@solana/spl-token": "^0.3.7",
+    "@coral-xyz/anchor": "^0.28.0",
+    "@solana/spl-token": "^0.3.8",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
