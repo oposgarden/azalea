@@ -1,11 +1,11 @@
 [programs.localnet]
-time_locked_fund = "EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc"
+time_locked_fund = "HegHGTKDnkMGqkNiL2VHzUCxoK3E5LZAuxbXGPfNipEm"
 
 [programs.devnet]
-time_locked_fund = "EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc"
+time_locked_fund = "HegHGTKDnkMGqkNiL2VHzUCxoK3E5LZAuxbXGPfNipEm"
 
 [programs.mainnet]
-time_locked_fund = "EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc"
+time_locked_fund = "HegHGTKDnkMGqkNiL2VHzUCxoK3E5LZAuxbXGPfNipEm"
 
 [registry]
 url = "https://anchor.projectserum.com"

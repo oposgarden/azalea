@@ -30,7 +30,7 @@ import { Lock, Unlock, Check } from '@geist-ui/icons'
 const opts = {
   preflightCommitment: 'processed',
 }
-const programID = new PublicKey('EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc')
+const programID = new PublicKey('HegHGTKDnkMGqkNiL2VHzUCxoK3E5LZAuxbXGPfNipEm')
 
 const Fund: NextPage = () => {
   const { connection } = useConnection()
@@ -71,7 +71,7 @@ const Fund: NextPage = () => {
   useEffect(() => {
     new TokenListProvider().resolve().then(tokens => {
       const tokenList = tokens
-        .filterByChainId(parseInt(process.env.NEXT_PUBLIC_CHAIN_ID as string) || ENV.Devnet)
+        .filterByChainId(parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '') || ENV.Devnet)
         .getList()
 
       setTokenMap(

@@ -4,7 +4,7 @@ import { PublicKey, type Connection } from '@solana/web3.js'
 import idl from '../time_locked_fund.json'
 import { TimeLockedFund } from '../types/time_locked_fund'
 
-const programID = new PublicKey('EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc')
+const programID = new PublicKey('HegHGTKDnkMGqkNiL2VHzUCxoK3E5LZAuxbXGPfNipEm')
 
 const getProvider = ({
   wallet,

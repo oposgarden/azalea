@@ -3,7 +3,7 @@ use anchor_spl::token::{Mint, Token, TokenAccount, Transfer, transfer};
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_lang::solana_program::clock;
 
-declare_id!("EJReuMV3KRJVJBSQPhU1aTr5SZWUQfRXc14hiFY2gBoc");
+declare_id!("HegHGTKDnkMGqkNiL2VHzUCxoK3E5LZAuxbXGPfNipEm");
 
 const FUND_PDA_SEED: &[u8] = b"fund";
 const TOKEN_VAULT_AUTHORITY_PDA_SEED: &[u8] = b"token-vault-authority";

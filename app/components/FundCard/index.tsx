@@ -19,7 +19,7 @@ const FundCard = ({ fund }: FundCardProps) => {
   useEffect(() => {
     new TokenListProvider().resolve().then(tokens => {
       const tokenList = tokens
-        .filterByChainId(parseInt(process.env.NEXT_PUBLIC_CHAIN_ID as string) || ENV.Devnet)
+        .filterByChainId(parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '') || ENV.Devnet)
         .getList()
 
       const token = tokenList.filter(token => {
